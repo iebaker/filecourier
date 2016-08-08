@@ -3,17 +3,16 @@
 from __future__ import print_function
 from flask import Flask, Response, request
 from multiprocessing import Process
-import os, webbrowser, sys, logging, time
+import os, webbrowser, sys, logging, time, requests
 
-try:
-	os.remove('.code.txt')
-except OSError:
-	pass
+CLIENT_ID = 'lhFBjF4VWMkvoE0E7jFSRZO3lMxegg9X'
+CLIENT_SECRET = 'E4SJ4F2x3gdT3eVLULtLODnwjCVpP3Xu3DuP7FlxwlXeUXQZ'
+
+# ============ #
+# FLASK SERVER #
+# ============ #
 
 app = Flask(__name__)
-access_code = 0
-
-# Stop flask server from printing stuff
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 @app.route('/code/<code>', methods=['POST'])
@@ -42,10 +41,22 @@ def run_server():
 server = Process(target=run_server)
 server.start()
 
-# TODO: initiate oauth2 sequence in browser. For now just hit redirect directly
-webbrowser.open('https://secure.sharefile.com/oauth/authorize?response_type=%s&client_id=%s&redirect_uri=%s' %
-	('code', 'lhFBjF4VWMkvoE0E7jFSRZO3lMxegg9X', 'https://izaak.host/redirect.html'))
+# ================ #
+# END FLASK SERVER #
+# ================ #
 
+# get rid of old code file if it exists
+try:
+	os.remove('.code.txt')
+except OSError:
+	pass
+
+# Open a browser to initiate oauth2 sequence, redirect to hosted page which
+# will send code back to flask server and shut it down
+webbrowser.open('https://secure.sharefile.com/oauth/authorize?response_type=%s&client_id=%s&redirect_uri=%s' %
+	('code', CLIENT_ID, 'https://izaak.host/redirect.html'))
+
+# Wait for oauth2 to complete, then read access code off file
 def spin_til_code_file_written():
 	global access_code
 	while True:
@@ -57,4 +68,17 @@ def spin_til_code_file_written():
 			time.sleep(1)
 spin_til_code_file_written()
 
-print('Code %s retrieved!' % access_code)
+print('Access Code: %s' % access_code)
+
+# Exchange access code for
+payload = {
+	'code': access_code,
+	'client_id': CLIENT_ID,
+	'client_secret': CLIENT_SECRET,
+	'grant_type': 'authorization_code' }
+response = requests.post('https://secure.sharefile.com/oauth/token', data=payload, verify=False).json()
+
+access_token = response['access_token']
+print('Access Token: %s' % access_token)
+refresh_token = response['refresh_token']
+print('Refresh Token: %s' % refresh_token)
