@@ -1,0 +1,40 @@
+<html>
+	<head>
+		<title>File Courier Access Code</title>
+	</head>
+	<body>
+		<h1>File Courier</h1>
+		<div id="code"></div>
+		<script>
+			var pageUrl = window.location.href;
+			var parametersSection = pageUrl.split('?')[1];
+			var individualParameters = parametersSection.split('&');
+			var urlParameters = {};
+
+			for(var i = 0; i < individualParameters.length; i++) {
+				var kvPair = individualParameters[i].split('=');
+				urlParameters[kvPair[0]] = kvPair[1];
+			}
+
+			console.log(urlParameters);
+			var codeParameter = urlParameters['code'];
+			document.getElementById('code').innerHTML = 'Received code ' + codeParameter + ', sending...';
+
+			var postCodeRequest = new XMLHttpRequest();
+			postCodeRequest.onreadystatechange = function() {
+				if (postCodeRequest.readyState == XMLHttpRequest.DONE) {
+					var shutdownServerRequest = new XMLHttpRequest();
+					shutdownServerRequest.onreadystatechange = function() {
+						if (shutdownServerRequest.readyState == XMLHttpRequest.DONE) {
+							document.getElementById('code').innerHTML = 'Code sent. This window may be closed!';
+						}
+					}
+					shutdownServerRequest.open('POST', 'http://localhost:5000/shutdown', true);
+					shutdownServerRequest.send();
+				}
+			}
+			postCodeRequest.open('POST', 'http://localhost:5000/code/' + codeParameter, true);
+			postCodeRequest.send();
+		</script>
+	</body>
+</html>
