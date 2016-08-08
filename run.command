@@ -82,3 +82,26 @@ access_token = response['access_token']
 print('Access Token: %s' % access_token)
 refresh_token = response['refresh_token']
 print('Refresh Token: %s' % refresh_token)
+
+class ShareFileClient:
+	def __init__(self, token):
+		self.token = token
+		self.auth_header = {'Authorization': 'Bearer %s' % access_token}
+
+	def ls(self, path):
+		pieces = path.split('/')
+		pieces.reverse()
+		pieces.append('allshared')
+		while pieces:
+			current = pieces[-1]
+			next_id = current if current == 'allshared' else result[current]
+			response = requests.get('https://izaak.sf-api.com/sf/v3/Items(%s)/Children' % next_id, headers=self.auth_header, verify=False).json()
+			result = {item['FileName']: item['Id'] for item in response['value']}
+			pieces.pop()
+		return result
+
+	def mv(self, item, source, destination):
+		pass
+
+sharefile = ShareFileClient(access_token)
+print(str(sharefile.ls('Bullet')))
