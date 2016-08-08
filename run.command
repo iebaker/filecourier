@@ -43,7 +43,8 @@ server = Process(target=run_server)
 server.start()
 
 # TODO: initiate oauth2 sequence in browser. For now just hit redirect directly
-webbrowser.open('http://izaak.host/redirect.html?code=foobarbaz123')
+webbrowser.open('https://secure.sharefile.com/oauth/authorize?response_type=%s&client_id=%s&redirect_uri=%s' %
+	('code', 'lhFBjF4VWMkvoE0E7jFSRZO3lMxegg9X', 'https://izaak.host/redirect.html'))
 
 def spin_til_code_file_written():
 	global access_code
