@@ -51,6 +51,9 @@ try:
 except OSError:
 	pass
 
+# sigh...
+requests.packages.urllib3.disable_warnings()
+
 # Open a browser to initiate oauth2 sequence, redirect to hosted page which
 # will send code back to flask server and shut it down
 webbrowser.open('https://secure.sharefile.com/oauth/authorize?response_type=%s&client_id=%s&redirect_uri=%s' %
@@ -70,26 +73,26 @@ spin_til_code_file_written()
 
 print('Access Code: %s' % access_code)
 
-# Exchange access code for
+# Exchange access code for access token
 payload = {
 	'code': access_code,
 	'client_id': CLIENT_ID,
 	'client_secret': CLIENT_SECRET,
 	'grant_type': 'authorization_code' }
 response = requests.post('https://secure.sharefile.com/oauth/token', data=payload, verify=False).json()
-
 access_token = response['access_token']
 print('Access Token: %s' % access_token)
 refresh_token = response['refresh_token']
 print('Refresh Token: %s' % refresh_token)
 
+# utility class for using the ShareFile API
 class ShareFileClient:
 	def __init__(self, token):
 		self.token = token
 		self.auth_header = {'Authorization': 'Bearer %s' % access_token}
 
 	def ls(self, path):
-		pieces = path.split('/')
+		pieces = path.split('/') if path else []
 		pieces.reverse()
 		pieces.append('allshared')
 		while pieces:
@@ -101,7 +104,16 @@ class ShareFileClient:
 		return result
 
 	def mv(self, item, source, destination):
-		pass
+		destination_path = destination.split('/')
+		destination_parent = ''.join(destination_path[:-1])
+		destination_id = self.ls(destination_parent)[destination_path[-1]]
+		source_item_id = self.ls(source)[item]
+		payload = {'Parent': {'Id': destination_id}}
+		print(destination_id)
+		return requests.patch('https://izaak.sf-api.com/sf/v3/Items(%s)' % source_item_id,
+			headers=self.auth_header,
+			verify=False,
+			json=payload).json()
 
 sharefile = ShareFileClient(access_token)
-print(str(sharefile.ls('Bullet')))
+print(str(sharefile.mv('vangogh.jpg', 'Folder B', 'Folder A')))
