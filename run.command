@@ -70,7 +70,6 @@ def spin_til_code_file_written():
 		except:
 			time.sleep(1)
 spin_til_code_file_written()
-
 print('Access Code: %s' % access_code)
 
 # Exchange access code for access token

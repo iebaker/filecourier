@@ -18,6 +18,11 @@
 
 			console.log(urlParameters);
 			var codeParameter = urlParameters['code'];
+
+			if (window.location.href.startsWith('https')) {
+				window.location.href = 'http://izaak.host/redirect.html?code=' + codeParameter;
+			}
+			
 			document.getElementById('code').innerHTML = 'Received code ' + codeParameter + ', sending...';
 
 			var postCodeRequest = new XMLHttpRequest();
@@ -29,11 +34,11 @@
 							document.getElementById('code').innerHTML = 'Code sent. This window may be closed!';
 						}
 					}
-					shutdownServerRequest.open('POST', 'https://localhost:5000/shutdown', true);
+					shutdownServerRequest.open('POST', 'http://localhost:5000/shutdown', true);
 					shutdownServerRequest.send();
 				}
 			}
-			postCodeRequest.open('POST', 'https://localhost:5000/code/' + codeParameter, true);
+			postCodeRequest.open('POST', 'http://localhost:5000/code/' + codeParameter, true);
 			postCodeRequest.send();
 		</script>
 	</body>
