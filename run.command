@@ -56,6 +56,7 @@ requests.packages.urllib3.disable_warnings()
 
 # Open a browser to initiate oauth2 sequence, redirect to hosted page which
 # will send code back to flask server and shut it down
+print('[FILECOURIER] Opening ShareFile Login')
 webbrowser.open('https://secure.sharefile.com/oauth/authorize?response_type=%s&client_id=%s&redirect_uri=%s' %
 	('code', CLIENT_ID, 'https://izaak.host/redirect.html'))
 
@@ -70,7 +71,7 @@ def spin_til_code_file_written():
 		except:
 			time.sleep(1)
 spin_til_code_file_written()
-print('Access Code: %s' % access_code)
+print('[FILECOURIER] Access Code: %s' % access_code)
 
 # Exchange access code for access token
 payload = {
@@ -80,9 +81,9 @@ payload = {
 	'grant_type': 'authorization_code' }
 response = requests.post('https://secure.sharefile.com/oauth/token', data=payload, verify=False).json()
 access_token = response['access_token']
-print('Access Token: %s' % access_token)
+print('[FILECOURIER] Access Token: %s' % access_token)
 refresh_token = response['refresh_token']
-print('Refresh Token: %s' % refresh_token)
+print('[FILECOURIER] Refresh Token: %s' % refresh_token)
 
 # utility class for using the ShareFile API
 class ShareFileClient:
@@ -118,24 +119,9 @@ class ShareFileClient:
 
 # Make a new sharefile client!
 sharefile = ShareFileClient(access_token)
-
-# Find all the different alphabet pieces (e.g. "A-C", "S-U")
-alphabet_segments = sharefile.list('Dependent E-Files')
-alphabet_segments = {key: value for key, value in alphabet_segments.iteritems() if len(key) == 3}
-
-# Search Team Leaders/Monthly Paperwork/*/August 2016 for files (assume all are VHL files!) and move them appropriately
-team_leaders_monthly_paperwork = sharefile.list('Team Leaders/Monthly Paperwork')
-for team_leader_folder in team_leaders_monthly_paperwork:
-	august_2016 = sharefile.list('Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder)
-	for filename in august_2016:
-		child_first_initial = filename.split(' ')[3][0]
-		child_name = ' '.join([filename.split(' ')[3], filename.split(' ')[4]])
-		for segment in alphabet_segments:
-			range_pair = segment.split('-')
-			if child_first_initial >= range_pair[0] and child_first_initial <= range_pair[1]:
-				item = filename
-				source = 'Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder
-				destination = 'Dependent E-Files/%s/%s/CASA Internal Documents' % (segment, child_name)
-				sharefile.move(item, source, destination)
+for task in [line.rstrip() for line in open('run.config').readlines()]:
+	print('[FILECOURIER] Running task "%s"' % task)
+	__import__(task).execute(sharefile)
+	print('[FILECOURIER] Task "%s" complete!' % task)
 
 print('Done!')
