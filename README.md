@@ -1,2 +1,2 @@
 # filecourier
-A helper for uploading to Citrix Sharefile
+A helper for moving files around Citrix Sharefile

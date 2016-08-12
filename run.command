@@ -90,29 +90,52 @@ class ShareFileClient:
 		self.token = token
 		self.auth_header = {'Authorization': 'Bearer %s' % access_token}
 
-	def ls(self, path):
+	def list(self, path):
 		pieces = path.split('/') if path else []
 		pieces.reverse()
 		pieces.append('allshared')
 		while pieces:
 			current = pieces[-1]
 			next_id = current if current == 'allshared' else result[current]
-			response = requests.get('https://izaak.sf-api.com/sf/v3/Items(%s)/Children' % next_id, headers=self.auth_header, verify=False).json()
+			response = requests.get('https://izaak.sf-api.com/sf/v3/Items(%s)/Children' % next_id,
+				headers=self.auth_header,
+				verify=False).json()
 			result = {item['FileName']: item['Id'] for item in response['value']}
 			pieces.pop()
 		return result
 
-	def mv(self, item, source, destination):
+	def move(self, item, source, destination):
+		print('Moving %s from %s to %s' % (item, source, destination))
 		destination_path = destination.split('/')
-		destination_parent = ''.join(destination_path[:-1])
-		destination_id = self.ls(destination_parent)[destination_path[-1]]
-		source_item_id = self.ls(source)[item]
+		destination_parent = '/'.join(destination_path[:-1])
+		destination_id = self.list(destination_parent)[destination_path[-1]]
+		source_item_id = self.list(source)[item]
 		payload = {'Parent': {'Id': destination_id}}
-		print(destination_id)
 		return requests.patch('https://izaak.sf-api.com/sf/v3/Items(%s)' % source_item_id,
 			headers=self.auth_header,
 			verify=False,
 			json=payload).json()
 
+# Make a new sharefile client!
 sharefile = ShareFileClient(access_token)
-print(str(sharefile.mv('vangogh.jpg', 'Folder B', 'Folder A')))
+
+# Find all the different alphabet pieces (e.g. "A-C", "S-U")
+alphabet_segments = sharefile.list('Dependent E-Files')
+alphabet_segments = {key: value for key, value in alphabet_segments.iteritems() if len(key) == 3}
+
+# Search Team Leaders/Monthly Paperwork/*/August 2016 for files (assume all are VHL files!) and move them appropriately
+team_leaders_monthly_paperwork = sharefile.list('Team Leaders/Monthly Paperwork')
+for team_leader_folder in team_leaders_monthly_paperwork:
+	august_2016 = sharefile.list('Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder)
+	for filename in august_2016:
+		child_first_initial = filename.split(' ')[3][0]
+		child_name = ' '.join([filename.split(' ')[3], filename.split(' ')[4]])
+		for segment in alphabet_segments:
+			range_pair = segment.split('-')
+			if child_first_initial >= range_pair[0] and child_first_initial <= range_pair[1]:
+				item = filename
+				source = 'Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder
+				destination = 'Dependent E-Files/%s/%s/CASA Internal Documents' % (segment, child_name)
+				sharefile.move(item, source, destination)
+
+print('Done!')
