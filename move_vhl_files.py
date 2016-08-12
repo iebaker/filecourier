@@ -1,4 +1,4 @@
-def execute(sharefile):
+def program(sharefile):
     # Find all the different alphabet pieces (e.g. "A-C", "S-U")
     alphabet_segments = sharefile.list('Dependent E-Files')
     alphabet_segments = {key: value for key, value in alphabet_segments.iteritems() if len(key) == 3}
