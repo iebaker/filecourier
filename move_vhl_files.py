@@ -15,7 +15,7 @@ def program(sharefile):
 		august_2016 = sharefile.list('Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder)
 		for filename in august_2016:
 
-			# If the filename doesn't have 'VHL' in it, move on to the next team leader
+			# If the filename doesn't have 'VHL' in it, move on to the next filename
 			if filename.find('VHL') == -1:
 				continue
 
