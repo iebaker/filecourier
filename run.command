@@ -120,8 +120,8 @@ class ShareFileClient:
 # Make a new sharefile client!
 sharefile = ShareFileClient(access_token)
 for program in [line.rstrip() for line in open('run.config').readlines()]:
-	print('[FILECOURIER] Running task "%s"' % task)
+	print('[FILECOURIER] Running Program "%s"' % program)
 	__import__(program).program(sharefile)
-	print('[FILECOURIER] Task "%s" complete!' % task)
+	print('[FILECOURIER] Program "%s" complete!' % program)
 
-print('Done!')
+print('[FILECOURIER] Done!')

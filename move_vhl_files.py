@@ -8,6 +8,8 @@ def program(sharefile):
     for team_leader_folder in team_leaders_monthly_paperwork:
     	august_2016 = sharefile.list('Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder)
     	for filename in august_2016:
+            if filename.find('VHL') == -1:
+                continue
     		child_first_initial = filename.split(' ')[3][0]
     		child_name = ' '.join([filename.split(' ')[3], filename.split(' ')[4]])
     		for segment in alphabet_segments:
