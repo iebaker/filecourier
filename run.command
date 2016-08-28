@@ -3,10 +3,13 @@
 from __future__ import print_function
 from flask import Flask, Response, request
 from multiprocessing import Process
-import os, webbrowser, sys, logging, time, requests
+import os, webbrowser, sys, logging, time, requests, json
 
-CLIENT_ID = 'lhFBjF4VWMkvoE0E7jFSRZO3lMxegg9X'
-CLIENT_SECRET = 'E4SJ4F2x3gdT3eVLULtLODnwjCVpP3Xu3DuP7FlxwlXeUXQZ'
+path = '/'.join(sys.argv[0].split('/')[:-1])
+config = json.load(open(path + '/run.config'))
+
+CLIENT_ID = config['client_id']
+CLIENT_SECRET = config['client_secret']
 
 # ============ #
 # FLASK SERVER #
@@ -98,28 +101,34 @@ class ShareFileClient:
 		while pieces:
 			current = pieces[-1]
 			next_id = current if current == 'allshared' else result[current]
-			response = requests.get('https://izaak.sf-api.com/sf/v3/Items(%s)/Children' % next_id,
+			response = requests.get('https://%s.sf-api.com/sf/v3/Items(%s)/Children' % (config['sharefile_prefix'], next_id),
 				headers=self.auth_header,
 				verify=False).json()
 			result = {item['FileName']: item['Id'] for item in response['value']}
 			pieces.pop()
 		return result
 
-	def move(self, item, source, destination):
-		print('Moving %s from %s to %s' % (item, source, destination))
-		destination_path = destination.split('/')
-		destination_parent = '/'.join(destination_path[:-1])
-		destination_id = self.list(destination_parent)[destination_path[-1]]
-		source_item_id = self.list(source)[item]
-		payload = {'Parent': {'Id': destination_id}}
-		return requests.patch('https://izaak.sf-api.com/sf/v3/Items(%s)' % source_item_id,
+	def move(self, item, source, destination, new_name=None):
+		try:
+			print('[FILECOURIER] Attempting to move "%s" from "%s" to "%s"' % (item, source, destination))
+			destination_path = destination.split('/')
+			destination_parent = '/'.join(destination_path[:-1])
+			destination_id = self.list(destination_parent)[destination_path[-1]]
+			source_item_id = self.list(source)[item]
+		except:
+			print('[FILECOURIER] Unable to move "%s" from "%s" to "%s"' % (item, source, destination))
+			return
+		if new_name:
+			print('[FILECOURIER] Renaming to "%s"' % new_name)
+		payload = {'Parent': {'Id': destination_id}, 'Name': new_name} if new_name else {'Parent': {'Id': destination_id}}
+		return requests.patch('https://%s.sf-api.com/sf/v3/Items(%s)' % (config['sharefile_prefix'], source_item_id),
 			headers=self.auth_header,
 			verify=False,
 			json=payload).json()
 
 # Make a new sharefile client!
 sharefile = ShareFileClient(access_token)
-for program in [line.rstrip() for line in open('run.config').readlines()]:
+for program in config['programs']:
 	print('[FILECOURIER] Running Program "%s"' % program)
 	__import__(program).program(sharefile)
 	print('[FILECOURIER] Program "%s" complete!' % program)

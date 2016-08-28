@@ -1,36 +1,50 @@
 # This is an example Filecourier Program. It moves VHL files from Team Leader folders into Child folders
 def program(sharefile):
 
-	# First, find all the different alphabet segment folders (e.g. "A-C", "S-U")
+	target_month = raw_input('[VHL ROBOT] Enter target month: ')
+
 	alphabet_segments = sharefile.list('Dependent E-Files')
 	alphabet_segments = {key: value for key, value in alphabet_segments.iteritems() if len(key) == 3}
 
-	# Then, find the names of all the team leaders in Team Leaders/Monthly Paperwork
-	team_leaders_monthly_paperwork = sharefile.list('Team Leaders/Monthly Paperwork')
+	team_leaders = [leader for leader in sharefile.list('Team Leaders/Monthly Paperwork')]
+	for indexed_team_leader in enumerate(team_leaders):
+		print('[VHL ROBOT] [%d] %s' % indexed_team_leader)
 
-	# Go through each team leader and...
-	for team_leader_folder in team_leaders_monthly_paperwork:
+	input_recognized = False
+	while not input_recognized:
+		indices = raw_input('[VHL ROBOT] Enter team leaders (space separated), or Ctrl-C to quit: ')
+		try:
+			indices = [int(index) for index in indices.rstrip().split(' ')]
+			input_recognized = True
+		except:
+			print('[VHL ROBOT] Could not parse input...')
 
-		# Go through all the files in that team leader's august 2016 folder and...
-		august_2016 = sharefile.list('Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder)
-		for filename in august_2016:
+	for index in indices:
+		target_folder = 'Team Leaders/Monthly Paperwork/%s/%s' % (team_leaders[index], target_month)
+		print('[VHL ROBOT] Searching "%s"' % target_folder)
 
-			# If the filename doesn't have 'VHL' in it, move on to the next filename
+		month = sharefile.list(target_folder)
+		for filename in month:
+
 			if filename.find('VHL') == -1:
+				print('[VHL ROBOT] "%s" does not seem to be a VHL file' % filename)
 				continue
 
-			# Otherwise, find the child's name by splitting the filename around spaces and joining the 4th and 5th pieces
-			child_name = ' '.join([filename.split(' ')[3], filename.split(' ')[4]])
+			try:
+				child_name = filename.split()[2]
+				print('[VHL ROBOT] "%s" is a VHL file for child %s' % (filename, child_name))
+			except:
+				print('[VHL ROBOT] "%s" might be a VHL file with a nonstandard name. Ignoring it.' % filename)
+				continue
 
-			# With this child name, go through all the alphabet segments and ...
+			found = False
 			for segment in alphabet_segments:
 				range_pair = segment.split('-')
-
-				# If the child's name falls into this alphabet segment...
 				if child_name[0] >= range_pair[0] and child_name[0] <= range_pair[1]:
-
-					# Move the file into the appropriate result folder!
+					found = True
 					item = filename
-					source = 'Team Leaders/Monthly Paperwork/%s/August 2016' % team_leader_folder
-					destination = 'Dependent E-Files/%s/%s/CASA Internal Documents' % (segment, child_name)
-					sharefile.move(item, source, destination)
+					source = 'Team Leaders/Monthly Paperwork/%s/%s' % (team_leaders[index], target_month)
+					destination = 'Dependent E-Files/%s/%s/CASA Internal Documents' % (segment, child_name[:-1] + ' ' + child_name[-1])
+					sharefile.move(item, source, destination, ' '.join(filename.split()[1:]))
+			if not found:
+				print('[VHL ROBOT] Could not alphabetize %s in %s', child_name, str(alphabet_segments))
