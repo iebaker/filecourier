@@ -1,12 +1,15 @@
-# This is an example Filecourier Program. It moves VHL files from Team Leader folders into Child folders
-def program(sharefile):
+def program(sharefile, config):
 
 	target_month = raw_input('[VHL ROBOT] Enter target month: ')
+
+	team_leaders = [leader for leader in sharefile.list('Team Leaders/Monthly Paperwork')]
+	if not team_leaders:
+		print('[VHL ROBOT] Could not find team leader files. Quitting.')
+		return
 
 	alphabet_segments = sharefile.list('Dependent E-Files')
 	alphabet_segments = {key: value for key, value in alphabet_segments.iteritems() if len(key) == 3}
 
-	team_leaders = [leader for leader in sharefile.list('Team Leaders/Monthly Paperwork')]
 	for indexed_team_leader in enumerate(team_leaders):
 		print('[VHL ROBOT] [%d] %s' % indexed_team_leader)
 
@@ -45,6 +48,6 @@ def program(sharefile):
 					item = filename
 					source = 'Team Leaders/Monthly Paperwork/%s/%s' % (team_leaders[index], target_month)
 					destination = 'Dependent E-Files/%s/%s/CASA Internal Documents' % (segment, child_name[:-1] + ' ' + child_name[-1])
-					sharefile.move(item, source, destination, ' '.join(filename.split()[1:]))
+					sharefile.copy(item, source, destination, ' '.join(filename.split()[1:]))
 			if not found:
 				print('[VHL ROBOT] Could not alphabetize %s in %s', child_name, str(alphabet_segments))

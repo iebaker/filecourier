@@ -94,13 +94,17 @@ class ShareFileClient:
 		self.token = token
 		self.auth_header = {'Authorization': 'Bearer %s' % access_token}
 
-	def list(self, path):
+	def list(self, path=None):
 		pieces = path.split('/') if path else []
 		pieces.reverse()
 		pieces.append('allshared')
 		while pieces:
 			current = pieces[-1]
-			next_id = current if current == 'allshared' else result[current]
+			try:
+				next_id = current if current == 'allshared' else result[current]
+			except:
+				print('[FILECOURIER][list] Could not find item "%s"' % current)
+				return {}
 			response = requests.get('https://%s.sf-api.com/sf/v3/Items(%s)/Children' % (config['sharefile_prefix'], next_id),
 				headers=self.auth_header,
 				verify=False).json()
@@ -108,29 +112,55 @@ class ShareFileClient:
 			pieces.pop()
 		return result
 
+	def rename(self, item_id, new_name):
+		payload = {'Name': new_name, 'FileName': new_name}
+		print('[FILECOURIER][rename] Renaming file to "%s"' % new_name)
+		return requests.patch('https://%s.sf-api.com/sf/v3/Items(%s)' % (config['sharefile_prefix'], item_id),
+			headers=self.auth_header,
+			verify=False,
+			json=payload).json()
+
 	def move(self, item, source, destination, new_name=None):
 		try:
-			print('[FILECOURIER] Attempting to move "%s" from "%s" to "%s"' % (item, source, destination))
+			print('[FILECOURIER][move] Attempting to move "%s" from "%s" to "%s"' % (item, source, destination))
 			destination_path = destination.split('/')
 			destination_parent = '/'.join(destination_path[:-1])
 			destination_id = self.list(destination_parent)[destination_path[-1]]
 			source_item_id = self.list(source)[item]
 		except:
-			print('[FILECOURIER] Unable to move "%s" from "%s" to "%s"' % (item, source, destination))
+			print('[FILECOURIER][move] Unable to move "%s" from "%s" to "%s"' % (item, source, destination))
 			return
 		if new_name:
-			print('[FILECOURIER] Renaming to "%s"' % new_name)
-		payload = {'Parent': {'Id': destination_id}, 'Name': new_name} if new_name else {'Parent': {'Id': destination_id}}
+			self.rename(item_id=source_item_id, new_name=new_name)
+		payload = {'Parent': {'Id': destination_id}}
 		return requests.patch('https://%s.sf-api.com/sf/v3/Items(%s)' % (config['sharefile_prefix'], source_item_id),
 			headers=self.auth_header,
 			verify=False,
 			json=payload).json()
 
+	def copy(self, item, source, destination, new_name=None):
+		try:
+			print('[FILECOURIER][copy] Attempting to copy "%s" from "%s" to "%s"' % (item, source, destination))
+			destination_path = destination.split('/')
+			destination_parent = '/'.join(destination_path[:-1])
+			destination_id = self.list(destination_parent)[destination_path[-1]]
+			source_item_id = self.list(source)[item]
+		except:
+			print('[FILECOURIER][copy] Unable to copy "%s" from "%s" to "%s"' % (item, source, destination))
+			return
+		copy_result = requests.post('https://%s.sf-api.com/sf/v3/Items(%s)/Copy?targetid=%s' % (config['sharefile_prefix'], source_item_id, destination_id),
+			headers=self.auth_header,
+			verify=False,
+			json=payload).json()
+		if new_name:
+			self.rename(item_id=self.list(destination)[item], new_name=new_name)
+		return copy_result
+
 # Make a new sharefile client!
 sharefile = ShareFileClient(access_token)
 for program in config['programs']:
 	print('[FILECOURIER] Running Program "%s"' % program)
-	__import__(program).program(sharefile)
+	__import__(program).program(sharefile, config['programs'][program])
 	print('[FILECOURIER] Program "%s" complete!' % program)
 
 print('[FILECOURIER] Done!')
