@@ -1,10 +1,12 @@
+from colors import blue, red
+
 def program(sharefile, config):
 
 	target_month = raw_input('[VHL ROBOT] Enter target month: ')
 
 	team_leaders = [leader for leader in sharefile.list('Team Leaders/Monthly Paperwork')]
 	if not team_leaders:
-		print('[VHL ROBOT] Could not find team leader files. Quitting.')
+		print(red('[VHL ROBOT] Could not find team leader files. Quitting.'))
 		return
 
 	alphabet_segments = sharefile.list('Dependent E-Files')
@@ -20,7 +22,7 @@ def program(sharefile, config):
 			indices = [int(index) for index in indices.rstrip().split(' ')]
 			input_recognized = True
 		except:
-			print('[VHL ROBOT] Could not parse input...')
+			print(red('[VHL ROBOT] Could not parse input...'))
 
 	for index in indices:
 		target_folder = 'Team Leaders/Monthly Paperwork/%s/%s' % (team_leaders[index], target_month)
@@ -30,14 +32,14 @@ def program(sharefile, config):
 		for filename in month:
 
 			if filename.find('VHL') == -1:
-				print('[VHL ROBOT] "%s" does not seem to be a VHL file' % filename)
+				print(blue('[VHL ROBOT] "%s" does not seem to be a VHL file' % filename))
 				continue
 
 			try:
 				child_name = filename.split()[2]
 				print('[VHL ROBOT] "%s" is a VHL file for child %s' % (filename, child_name))
 			except:
-				print('[VHL ROBOT] "%s" might be a VHL file with a nonstandard name. Ignoring it.' % filename)
+				print(blue('[VHL ROBOT] "%s" might be a VHL file with a nonstandard name. Ignoring it.' % filename))
 				continue
 
 			found = False
@@ -50,4 +52,4 @@ def program(sharefile, config):
 					destination = 'Dependent E-Files/%s/%s/CASA Internal Documents' % (segment, child_name[:-1] + ' ' + child_name[-1])
 					sharefile.copy(item, source, destination, ' '.join(filename.split()[1:]))
 			if not found:
-				print('[VHL ROBOT] Could not alphabetize %s in %s', child_name, str(alphabet_segments))
+				print(red('[VHL ROBOT] Could not alphabetize %s in %s', child_name, str(alphabet_segments)))

@@ -3,6 +3,7 @@
 from __future__ import print_function
 from flask import Flask, Response, request
 from multiprocessing import Process
+from colors import red
 import os, webbrowser, sys, logging, time, requests, json
 
 path = '/'.join(sys.argv[0].split('/')[:-1])
@@ -103,7 +104,7 @@ class ShareFileClient:
 			try:
 				next_id = current if current == 'allshared' else result[current]
 			except:
-				print('[FILECOURIER][list] Could not find item "%s"' % current)
+				print(red('[FILECOURIER][list] Could not find item "%s"' % current))
 				return {}
 			response = requests.get('https://%s.sf-api.com/sf/v3/Items(%s)/Children' % (config['sharefile_prefix'], next_id),
 				headers=self.auth_header,
@@ -128,7 +129,7 @@ class ShareFileClient:
 			destination_id = self.list(destination_parent)[destination_path[-1]]
 			source_item_id = self.list(source)[item]
 		except:
-			print('[FILECOURIER][move] Unable to move "%s" from "%s" to "%s"' % (item, source, destination))
+			print(red('[FILECOURIER][move] Unable to move "%s" from "%s" to "%s"' % (item, source, destination)))
 			return
 		if new_name:
 			self.rename(item_id=source_item_id, new_name=new_name)
@@ -146,7 +147,7 @@ class ShareFileClient:
 			destination_id = self.list(destination_parent)[destination_path[-1]]
 			source_item_id = self.list(source)[item]
 		except:
-			print('[FILECOURIER][copy] Unable to copy "%s" from "%s" to "%s"' % (item, source, destination))
+			print(red('[FILECOURIER][copy] Unable to copy "%s" from "%s" to "%s"' % (item, source, destination)))
 			return
 		copy_result = requests.post('https://%s.sf-api.com/sf/v3/Items(%s)/Copy?targetid=%s' % (config['sharefile_prefix'], source_item_id, destination_id),
 			headers=self.auth_header,
