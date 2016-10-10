@@ -3,7 +3,7 @@
 from __future__ import print_function
 from flask import Flask, Response, request
 from multiprocessing import Process
-from colors import red
+from colors import red, blue
 import os, webbrowser, sys, logging, time, requests, json
 
 path = '/'.join(sys.argv[0].split('/')[:-1])
@@ -115,7 +115,7 @@ class ShareFileClient:
 
 	def rename(self, item_id, new_name):
 		payload = {'Name': new_name, 'FileName': new_name}
-		print('[FILECOURIER][rename] Renaming file to "%s"' % new_name)
+		print(blue('[FILECOURIER][rename] Renaming file to "%s"' % new_name))
 		return requests.patch('https://%s.sf-api.com/sf/v3/Items(%s)' % (config['sharefile_prefix'], item_id),
 			headers=self.auth_header,
 			verify=False,

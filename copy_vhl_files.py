@@ -36,7 +36,10 @@ def program(sharefile, config):
 				continue
 
 			try:
-				child_name = filename.split()[2]
+				pieces = filename.split()
+				if not (len(pieces) == 4):
+					raise Error
+				child_name = pieces[2]
 				print('[VHL ROBOT] "%s" is a VHL file for child %s' % (filename, child_name))
 			except:
 				print(blue('[VHL ROBOT] "%s" might be a VHL file with a nonstandard name. Ignoring it.' % filename))
