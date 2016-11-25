@@ -123,7 +123,7 @@ class ShareFileClient:
 
 	def move(self, item, source, destination, new_name=None):
 		try:
-			print('[FILECOURIER][move] Attempting to move "%s" from "%s" to "%s"' % (item, source, destination))
+			print(green('[FILECOURIER][move] Attempting to move "%s" from "%s" to "%s"' % (item, source, destination)))
 			destination_path = destination.split('/')
 			destination_parent = '/'.join(destination_path[:-1])
 			destination_id = self.list(destination_parent)[destination_path[-1]]
