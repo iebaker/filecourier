@@ -159,7 +159,8 @@ class ShareFileClient:
 
 # Make a new sharefile client!
 sharefile = ShareFileClient(access_token)
-for indexed_program in enumerate(config['programs']):
+indexed_programs = enumerate(config['programs'])
+for indexed_program in indexed_programs:
 	print('[FILECOURIER] [%d] %s' % indexed_program)
 
 input_regognized = False
@@ -172,7 +173,7 @@ while not input_regognized:
 		print(red('[FILECOURIER] Could not parse input...'))
 
 for index in indices:
-	program = config['programs'][index]
+	program = config['programs'][indexed_programs[index][1]]
 	print('[FILECOURIER] Running Program "%s"' % program)
 	# __import__(program).program(sharefile, config['programs'][program])
 	# print('[FILECOURIER] Program "%s" complete!' % program)
